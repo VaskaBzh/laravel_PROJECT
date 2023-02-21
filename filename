@@ -1,0 +1,5 @@
+[14-Feb-2023 13:55:10 Europe/Moscow] PHP Warning:  require(C:\Pirip\allbtc_main/vendor/autoload.php): Failed to open stream: No such file or directory in C:\Pirip\allbtc_main\artisan on line 18
+[14-Feb-2023 13:55:10 Europe/Moscow] PHP Fatal error:  Uncaught Error: Failed opening required 'C:\Pirip\allbtc_main/vendor/autoload.php' (include_path='C:\PHP\includes') in C:\Pirip\allbtc_main\artisan:18
+Stack trace:
+#0 {main}
+  thrown in C:\Pirip\allbtc_main\artisan on line 18
