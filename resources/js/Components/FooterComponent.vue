@@ -148,7 +148,7 @@
                     </li>
                 </ul>
             </div>
-            <div class="footer__quote quote">© 2022 Allbtc Pool</div>
+            <div class="footer__quote quote">© 2022 Allbtc Pool <a href="#">Конфидециальность</a></div>
         </div>
     </footer>
 </template>

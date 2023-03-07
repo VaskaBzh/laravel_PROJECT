@@ -149,9 +149,9 @@ class Popup {
         this.eventsPopup();
     }
     eventsPopup() {
-        // Клик на всем документе
+        // Клик на всем документе (для graph)
         document.addEventListener(
-            "mousedown",
+            "click",
             function (e) {
                 // Клик по кнопке "открыть"
                 const buttonOpen = e.target.closest(
@@ -179,6 +179,12 @@ class Popup {
 
                     return;
                 }
+            }.bind(this)
+        );
+        // Клик на всем документе
+        document.addEventListener(
+            "mousedown",
+            function (e) {
                 // Закрытие на пустом месте (popup__wrapper) и кнопки закрытия (popup__close) для закрытия
                 const buttonClose = e.target.closest(
                     `[${this.options.attributeCloseButton}]`

@@ -11,6 +11,8 @@ class User extends Authenticatable implements MustVerifyEmail
 {
     use  HasFactory, Notifiable;
 
+    protected $table = 'users';
+
     protected $fillable = [
         'name',
         'email',
@@ -34,5 +36,6 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'groups' => 'array',
     ];
 }

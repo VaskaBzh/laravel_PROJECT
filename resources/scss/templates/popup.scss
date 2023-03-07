@@ -16,8 +16,12 @@ body::after {
     body::after {
         opacity: 1;
     }
+
     .popup__content {
         animation: backMainAnimation forwards 0.3s ease 0s;
+        &-graph {
+            animation: backMainAnimationGraph forwards 0.3s ease 0s;
+        }
     }
 }
 .popup {
@@ -44,6 +48,9 @@ body::after {
             opacity: 1;
             transform: translateY(200px);
             animation: mainAnimation forwards 0.8s ease 0.5s !important;
+            &-graph {
+                animation: mainAnimationGraph forwards 0.8s ease 0.5s !important;
+            }
             &_logo {
                 animation: logoAnimation forwards 0.5s ease 0.5s;
                 opacity: 1;
@@ -59,10 +66,16 @@ body::after {
         width: 100%;
         justify-content: center;
     }
+    &_slide {
+        height: fit-content !important;
+    }
     &__slider {
         overflow: visible !important;
         opacity: 0;
         transition: all 0.5s ease 0s;
+        .swiper-wrapper {
+            transition: all 0.3s ease 0s;
+        }
         .form {
             animation: none !important;
             opacity: 1 !important;
@@ -86,6 +99,7 @@ body::after {
                     #4282ec 92.01%
                 );
                 transition: all 0.3s ease 0s;
+                position: relative;
                 &:before,
                 &:after {
                     content: none;
@@ -128,7 +142,27 @@ body::after {
             margin: auto;
             transition: all 0.8s ease 0s;
         }
+        .graph {
+            width: 100%;
+            opacity: 0;
+            margin: 0 !important;
+
+            &__main {
+                padding: 0 !important;
+                width: 100% !important;
+                margin: 0 !important;
+            }
+            &__graph,
+            &__list,
+            &__item,
+            &__con {
+                width: 100%;
+            }
+        }
         &.opened {
+            .graph {
+                animation: contentAnimation forwards 1.3s ease 0.8s !important;
+            }
             .popup__content_block {
                 animation: wrapperAnimation forwards 0.4s ease 0.5s;
                 width: 100%;
@@ -138,7 +172,7 @@ body::after {
                 .form {
                     animation: contentAnimation forwards 0.3s ease 0.7s;
                     &_message {
-                        animation: opacity forwards 0.3s ease 1s;
+                        animation: opacity forwards 0.3s ease 0s;
                     }
                 }
                 .swiper {
@@ -149,6 +183,7 @@ body::after {
         &_block {
             transition: all 0.8s ease 0s;
             overflow-x: hidden;
+            overflow-y: hidden;
             padding: 40px 0;
             @media (max-width: $mobileSmall) {
                 padding: 20px 0;
@@ -162,6 +197,9 @@ body::after {
                 padding-left: 5px;
                 opacity: 0;
                 transition: all 0.5s ease 0s;
+                .form {
+                    padding-left: 0;
+                }
             }
         }
         @media (max-width: $mobileSmall) {

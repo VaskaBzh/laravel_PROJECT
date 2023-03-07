@@ -40,7 +40,7 @@ export default {
             date: {},
             paymentInfo: {
                 titles: ["Дата", "Сумма", "Ссылка на транзакцию"],
-                // rows: [],
+                rows: [],
             },
         };
     },

@@ -33,7 +33,9 @@
                 <p
                     v-if="this.options[0].img"
                     class="main_select"
-                    @click="selectOptions(option.title, option.img)"
+                    @click="
+                        selectOptions(option.title, option.img, option.value)
+                    "
                 >
                     <img :src="this.optionsImgs[i]" />
                     {{ option.title }}
@@ -41,7 +43,7 @@
                 <p
                     v-else
                     class="main_select"
-                    @click="selectOptions(option.title)"
+                    @click="selectOptions(option.title, option.value)"
                 >
                     {{ option.title }}
                 </p>
@@ -80,13 +82,11 @@ export default {
         },
     },
     methods: {
-        selectOption(option) {
-            this.baseOption = option;
-        },
-        selectOptions(optionTitle, optionImg) {
+        selectOptions(optionTitle, optionImg, optionValue) {
             this.baseOption = optionTitle;
             this.baseImg =
                 "http://127.0.0.1:5173" + `/resources/assets/img/${optionImg}`;
+            this.$emit("getCoin", optionValue);
         },
         hideSelect() {
             if (this.select_is_open === true) {

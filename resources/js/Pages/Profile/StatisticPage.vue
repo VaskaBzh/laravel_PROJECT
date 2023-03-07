@@ -5,9 +5,26 @@
             <main-title tag="h2" class="statistic__title">
                 Статистика
             </main-title>
-            <statistic-chart
-                :viewportWidth="this.viewportWidth"
-                :graphs="graphs"
+            <div
+                class="invisible_button"
+                ref="popupShow"
+                data-popup="#graph"
+            ></div>
+            <popup-view :typePopup="'graph'" id="graph">
+                <statistic-chart
+                    :viewportWidth="this.viewportWidth"
+                    :graphs="graphs"
+                    :key="this.indexWorker"
+                />
+            </popup-view>
+            <wrap-table
+                :table="this.tables.workers"
+                link="workers"
+                linkText="воркеров"
+                :legend="true"
+                title="Воркеры"
+                :legendVal="this.accounts"
+                @graph_render="this.indexChanger"
             />
             <div class="wrap">
                 <main-title tag="h3" class="statistic__wrap_title">
@@ -33,14 +50,6 @@
                 </div>
             </div>
             <wrap-table
-                :table="this.tables.workers"
-                link="workers"
-                linkText="воркеров"
-                :legend="true"
-                title="Воркеры"
-                :legendVal="this.workers"
-            />
-            <wrap-table
                 :table="this.tables.payment"
                 link="payment"
                 linkText="выплат"
@@ -56,15 +65,24 @@ import StatisticChart from "@/Components/charts/StatisticChart.vue";
 import MainTitle from "@/Components/UI/MainTitle.vue";
 import WrapTable from "@/Components/tables/WrapTable.vue";
 import profileLayoutView from "@/Shared/ProfileLayoutView.vue";
+import PopupView from "@/Components/technical/PopupView.vue";
 
 export default {
-    components: { WrapTable, StatisticChart, MainTitle, PaymentCard, Head },
+    components: {
+        PopupView,
+        WrapTable,
+        StatisticChart,
+        MainTitle,
+        PaymentCard,
+        Head,
+    },
     layout: profileLayoutView,
     data() {
         return {
             visualType: "table",
             viewportWidth: 0,
-            workers: [],
+            index: 0,
+            indexWorker: -1,
             hash: [],
             accounts: [],
             history: [],
@@ -80,7 +98,7 @@ export default {
                     titles: [
                         "Имя воркера",
                         "Текущий",
-                        "Ср.хешрейт /1ч",
+                        // "Ср.хешрейт /1ч",
                         "Ср.хешрейт /24ч",
                         "Частота отказов /24ч",
                     ],
@@ -94,70 +112,21 @@ export default {
                     mainRow: {
                         hash: "Общий Хешрейт",
                         hashRate: 0,
-                        hashAvarage: 0,
+                        // hashAvarage: 0,
                         hashAvarage24: 0,
                         rejectRate: 0,
                     },
                     mainShortRow: {
                         hash: "Общий",
                         hashRate: 0,
-                        hashAvarage: 0,
+                        // hashAvarage: 0,
                         hashAvarage24: 0,
                         rejectRate: 0,
                     },
                 },
                 payment: {
                     titles: ["Дата", "Сумма", "Ссылка на транзакцию"],
-                    // rows: [
-                    // {
-                    //     date: "29.11.2022",
-                    //     time: "15:10:45",
-                    //     BTC: 0,
-                    //     link: "54df54s8454ad445s4d515xs4d6asd45xa54s",
-                    // },
-                    // {
-                    //     date: "29.11.2022",
-                    //     time: "15:10:45",
-                    //     BTC: 0,
-                    //     link: "54df54s8454ad445s4d515xs4d6asd45xa54s",
-                    // },
-                    // {
-                    //     date: "29.11.2022",
-                    //     time: "15:10:45",
-                    //     BTC: 0,
-                    //     link: "54df54s8454ad445s4d515xs4d6asd45xa54s",
-                    // },
-                    // {
-                    //     date: "29.11.2022",
-                    //     time: "15:10:45",
-                    //     BTC: 0,
-                    //     link: "54df54s8454ad445s4d515xs4d6asd45xa54s",
-                    // },
-                    // {
-                    //     date: "29.11.2022",
-                    //     time: "15:10:45",
-                    //     BTC: 0,
-                    //     link: "54df54s8454ad445s4d515xs4d6asd45xa54s",
-                    // },
-                    // {
-                    //     date: "29.11.2022",
-                    //     time: "15:10:45",
-                    //     BTC: 0,
-                    //     link: "54df54s8454ad445s4d515xs4d6asd45xa54s",
-                    // },
-                    // {
-                    //     date: "29.11.2022",
-                    //     time: "15:10:45",
-                    //     BTC: 0,
-                    //     link: "54df54s8454ad445s4d515xs4d6asd45xa54s",
-                    // },
-                    // {
-                    //     date: "29.11.2022",
-                    //     time: "15:10:45",
-                    //     BTC: 0,
-                    //     link: "54df54s8454ad445s4d515xs4d6asd45xa54s",
-                    // },
-                    // ],
+                    rows: [],
                 },
             },
         };
@@ -166,11 +135,11 @@ export default {
         hashRate() {
             return Number(this.tables.workers.rows.mainRow.hashRate).toFixed(2);
         },
-        hashAvarage() {
-            return Number(this.tables.workers.rows.mainRow.hashAvarage).toFixed(
-                2
-            );
-        },
+        // hashAvarage() {
+        //     return Number(this.tables.workers.rows.mainRow.hashAvarage).toFixed(
+        //         2
+        //     );
+        // },
         hashAvarage24() {
             return Number(
                 this.tables.workers.rows.mainRow.hashAvarage24
@@ -213,8 +182,41 @@ export default {
         },
     },
     methods: {
+        indexChanger(key) {
+            if (this.indexWorker !== -1) {
+                this.$refs.popupShow.click();
+            } else {
+                if (localStorage.activeWorker) {
+                    this.indexWorker = localStorage.activeWorker;
+                }
+            }
+            this.renderChart(key);
+            this.indexWorker = key;
+        },
         handleResize() {
             this.viewportWidth = window.innerWidth;
+        },
+        renderChart(index) {
+            let history;
+            if (this.history[this.index] && this.history[this.index][index]) {
+                history = this.history[this.index][index];
+            }
+            this.graphs[0].values = [];
+
+            for (let i = 1; i <= 25; i++) {
+                if (history) {
+                    let timeStamp = history[history.length - i];
+                    if (timeStamp) {
+                        this.graphs[0].values.unshift(
+                            Number(timeStamp[1]).toFixed(0)
+                        );
+                    } else {
+                        this.graphs[0].values.unshift(String(0));
+                    }
+                } else {
+                    this.graphs[0].values.unshift(String(0));
+                }
+            }
         },
     },
     created() {
@@ -231,9 +233,6 @@ export default {
         // }
     },
     beforeMount() {
-        if (localStorage.workers) {
-            this.workers = JSON.parse(localStorage.workers);
-        }
         if (localStorage.accounts) {
             this.accounts = JSON.parse(localStorage.accounts);
         }
@@ -243,44 +242,45 @@ export default {
         if (localStorage.history) {
             this.history = JSON.parse(localStorage.history);
         }
+        if (localStorage.active) {
+            this.index = localStorage.active;
+        }
 
-        let index = 0;
-
-        this.accounts.forEach((el, i) => {
-            if (el.name == "workertesttest") {
-                index = i;
+        Reflect.ownKeys(this.hash).forEach((el) => {
+            if (el) {
+                if (Reflect.get(this.hash, el).indexWorker == this.index) {
+                    let workersRowModel = {
+                        hashClass: Reflect.get(
+                            this.hash,
+                            el
+                        ).status.toLowerCase(),
+                        hash: Reflect.get(this.hash, el).name,
+                        hashRate: Reflect.get(this.hash, el).shares1m,
+                        // hashAvarage: Reflect.get(this.hash, el).shares1h,
+                        hashAvarage24: Reflect.get(this.hash, el).shares1d,
+                        rejectRate: Reflect.get(this.hash, el).persent,
+                        graphId: Reflect.get(this.hash, el).workerId,
+                    };
+                    this.tables.workers.rows.push(workersRowModel);
+                }
             }
         });
 
-        this.hash.forEach((row) => {
-            if (row.indexWorker === index) {
-                let workersRowModel = {
-                    hashClass: row.status.toLowerCase(),
-                    hash: row.name,
-                    hashRate: row.shares1m,
-                    hashAvarage: row.shares1h,
-                    hashAvarage24: row.shares1d,
-                    rejectRate: row.persent,
-                };
-                this.tables.workers.rows.push(workersRowModel);
-            }
-        });
-
-        this.tables.workers.mainRow.hashRate = this.accounts[index].hashRate15m;
-        this.tables.workers.mainRow.hashAvarage = this.accounts[index].hashRate;
-        this.tables.workers.mainRow.hashAvarage24 =
-            this.accounts[index].hashRate24;
-        this.tables.workers.mainShortRow.hashRate =
-            this.accounts[index].hashRate15m;
-        this.tables.workers.mainShortRow.hashAvarage =
-            this.accounts[index].hashRate;
-        this.tables.workers.mainShortRow.hashAvarage24 =
-            this.accounts[index].hashRate24;
-        this.history = this.history[index];
-
-        for (let i = 1; i <= 25; i++) {
-            let timeStamp = this.history[this.history.length - i];
-            this.graphs[0].values.push(Number(timeStamp[1]).toFixed(0));
+        if (this.accounts.length > 0) {
+            this.accounts.forEach((acc) => {
+                if (acc.indexWorker == this.index) {
+                    this.tables.workers.mainRow.hashRate = acc.shares1m;
+                    // this.tables.workers.mainRow.hashAvarage = acc.shares1h;
+                    this.tables.workers.mainRow.hashAvarage24 = acc.shares1d;
+                    this.tables.workers.mainRow.rejectRate = acc.rejectRate;
+                    this.tables.workers.mainShortRow.hashRate = acc.shares1m;
+                    // this.tables.workers.mainShortRow.hashAvarage = acc.shares1h;
+                    this.tables.workers.mainShortRow.hashAvarage24 =
+                        acc.shares1d;
+                    this.tables.workers.mainShortRow.rejectRate =
+                        acc.rejectRate;
+                }
+            });
         }
     },
 };
@@ -291,6 +291,16 @@ export default {
         padding-left: 330px;
     }
     width: 100%;
+    .invisible_button {
+        width: 0;
+        height: 0;
+        position: absolute;
+        left: 0;
+        top: 0;
+        z-index: -10;
+        visibility: hidden;
+        opacity: 0;
+    }
     &__title {
         margin-bottom: 16px;
         @media (max-width: 479.98px) {
@@ -299,7 +309,7 @@ export default {
     }
     .graph {
         margin-bottom: 32px;
-        animation: shadowDown 0.3s ease forwards;
+        //animation: shadowDown 0.3s ease forwards;
         @media (max-width: 479.98px) {
             margin-bottom: 0;
         }

@@ -8,7 +8,14 @@
         <div class="slider__nav" v-if="this.table.rows">
             <span
                 class="slider__nav_info"
-                v-if="this.rows > this.table.rows.length"
+                v-if="!this.$refs.page"
+            >
+                0 из
+                {{ this.table.rows.length }}
+            </span>
+            <span
+                class="slider__nav_info"
+                v-else-if="this.rows > this.table.rows.length"
             >
                 {{ this.startRow }}-{{ this.table.rows.length }} из
                 {{ this.table.rows.length }}
@@ -35,7 +42,10 @@
                         />
                     </svg>
                 </button>
-                <div class="slider__slides" v-if="this.pages <= 8">
+                <div class="slider__slides" v-if="this.pages === 0">
+                    <span>...</span>
+                </div>
+                <div class="slider__slides" v-else-if="this.pages <= 8">
                     <a
                         ref="page"
                         v-for="(page, index) in this.pages"
@@ -214,18 +224,20 @@ export default {
             }
         },
         slideNumber() {
-            setTimeout(() => {
-                for (let i = 0; i < this.$refs.page.length; i++) {
-                    if (
-                        this.$refs.page[i].innerText ===
-                        String(this.rows).slice(0, -1)
-                    ) {
-                        this.$refs.page[i].classList.add("active");
-                    } else {
-                        this.$refs.page[i].classList.remove("active");
+            if (this.$refs.page) {
+                setTimeout(() => {
+                    for (let i = 0; i < this.$refs.page.length; i++) {
+                        if (
+                            this.$refs.page[i].innerText ===
+                            String(this.rows).slice(0, -1)
+                        ) {
+                            this.$refs.page[i].classList.add("active");
+                        } else {
+                            this.$refs.page[i].classList.remove("active");
+                        }
                     }
-                }
-            }, 10);
+                }, 10);
+            }
         },
     },
     mounted() {

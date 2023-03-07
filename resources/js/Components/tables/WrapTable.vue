@@ -45,7 +45,7 @@
                 </div>
             </div>
         </div>
-        <div class="no-info" v-if="!this.table.rows">
+        <div class="no-info" v-if="this.table.rows.length == 0">
             <img src="../../../assets/img/img_no-info.png" alt="no_info" />
             <span>Нет данных</span>
         </div>
@@ -56,13 +56,21 @@
                 (this.type === 'Воркеры' && this.visualType === 'block')
             "
         >
-            <workers-table :table="this.table" :visualType="this.visualType" />
+            <workers-table
+                :table="this.table"
+                :visualType="this.visualType"
+                @graph_render="this.graphRender"
+            />
         </div>
         <div
             class="wrap-overflow"
             v-else-if="this.title === 'Воркеры' || this.type === 'Воркеры'"
         >
-            <workers-table :table="this.table" :visualType="this.visualType" />
+            <workers-table
+                :table="this.table"
+                :visualType="this.visualType"
+                @graph_render="this.graphRender"
+            />
         </div>
         <div
             class="wrap-overflow wrap-overflow-scrollY"
@@ -126,33 +134,60 @@ export default {
         return {
             visualType: "table",
             viewportWidth: 0,
-            index: 0,
+            index: localStorage.active,
             accounts: [],
         };
     },
     computed: {
         active() {
             let val = 0;
-            val = this.legendVal[this.index].workersActive;
+            if (this.legendVal.length > 0) {
+                this.accounts.forEach((acc) => {
+                    if (acc.indexWorker == this.index) {
+                        val = acc.workersActive;
+                    }
+                });
+            }
             return val;
         },
         unActive() {
             let val = 0;
-            val = this.legendVal[this.index].workersDead;
+            if (this.legendVal.length > 0) {
+                this.accounts.forEach((acc) => {
+                    if (acc.indexWorker == this.index) {
+                        val = acc.workersInActive;
+                    }
+                });
+            }
             return val;
         },
         unstable() {
             let val = 0;
-            val = this.legendVal[this.index].workersInActive;
+            if (this.legendVal.length > 0) {
+                this.accounts.forEach((acc) => {
+                    if (acc.indexWorker == this.index) {
+                        val = acc.workersDead;
+                    }
+                });
+            }
             return val;
         },
         all() {
             let val = 0;
-            val = this.legendVal[this.index].workersAll;
+            if (this.legendVal.length > 0) {
+                this.accounts.forEach((acc) => {
+                    if (acc.indexWorker == this.index) {
+                        val = acc.workersAll;
+                    }
+                });
+            }
             return val;
         },
     },
     methods: {
+        graphRender(key) {
+            this.$emit("graph_render", key);
+        },
         router() {
             return router;
         },
@@ -177,12 +212,6 @@ export default {
     },
     mounted() {
         this.vsType();
-
-        this.accounts.forEach((el, i) => {
-            if (el.name == "workertesttest") {
-                this.index = i;
-            }
-        });
     },
     beforeMount() {
         if (localStorage.accounts) {

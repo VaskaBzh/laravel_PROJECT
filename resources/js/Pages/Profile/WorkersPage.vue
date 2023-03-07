@@ -65,55 +65,29 @@ export default {
             workersInActive: 0,
             workersDead: 0,
             viewportWidth: 0,
-            workers: [],
             accounts: [],
             hash: [],
             table: {
                 titles: [
                     "Имя воркера",
                     "Текущий",
-                    "Ср.хешрейт /1ч",
+                    // "Ср.хешрейт /1ч",
                     "Ср.хешрейт /24ч",
                     "Частота отказов /24ч",
                 ],
                 shortTitles: ["Имя", "Текущий", "Ср.хешрейт/1д", "Отказы/1д"],
-                rows: [
-                    // {
-                    //     hashClass: "active",
-                    //     hash: 0,
-                    //     hashRate: 0,
-                    //     hashAvarage: 0,
-                    //     hashAvarage24: 0,
-                    //     rejectRate: 0.0,
-                    // },
-                    // {
-                    //     hashClass: "unstable",
-                    //     hash: 0,
-                    //     hashRate: 0,
-                    //     hashAvarage: 0,
-                    //     hashAvarage24: 0,
-                    //     rejectRate: 0.0,
-                    // },
-                    // {
-                    //     hashClass: "unactive",
-                    //     hash: 0,
-                    //     hashRate: 0,
-                    //     hashAvarage: 0,
-                    //     hashAvarage24: 0,
-                    //     rejectRate: 0.0,
-                    // },
-                ],
+                rows: [],
                 mainRow: {
                     hash: "Общий хешрейт",
                     hashRate: 0,
-                    hashAvarage: 0,
+                    // hashAvarage: 0,
                     hashAvarage24: 0,
                     rejectRate: 0,
                 },
                 mainShortRow: {
                     hash: "Общий",
                     hashRate: 0,
-                    hashAvarage: 0,
+                    // hashAvarage: 0,
                     hashAvarage24: 0,
                     rejectRate: 0,
                 },
@@ -140,43 +114,46 @@ export default {
     mounted() {
         document.title = "Воркеры";
 
-        let index = 0;
+        let index = localStorage.active;
 
-        this.accounts.forEach((el, i) => {
-            if (el.name == "workertesttest") {
-                index = i;
+        Reflect.ownKeys(this.hash).forEach((el) => {
+            if (el) {
+                if (Reflect.get(this.hash, el).indexWorker == index) {
+                    let workersRowModel = {
+                        hashClass: Reflect.get(
+                            this.hash,
+                            el
+                        ).status.toLowerCase(),
+                        hash: Reflect.get(this.hash, el).name,
+                        hashRate: Reflect.get(this.hash, el).shares1m,
+                        // hashAvarage: Reflect.get(this.hash, el).shares1h,
+                        hashAvarage24: Reflect.get(this.hash, el).shares1d,
+                        rejectRate: Reflect.get(this.hash, el).persent,
+                    };
+                    this.table.rows.push(workersRowModel);
+                }
             }
         });
-
-        this.hash.forEach((row) => {
-            if (row.indexWorker === index) {
-                let workersRowModel = {
-                    hashClass: row.status.toLowerCase(),
-                    hash: row.name,
-                    hashRate: row.shares1m,
-                    hashAvarage: row.shares1h,
-                    hashAvarage24: row.shares1d,
-                    rejectRate: row.persent,
-                };
-                this.table.rows.push(workersRowModel);
-            }
-        });
-
-        this.table.mainRow.hashRate = this.accounts[index].hashRate15m;
-        this.table.mainRow.hashAvarage = this.accounts[index].hashRate;
-        this.table.mainRow.hashAvarage24 = this.accounts[index].hashRate24;
-        this.table.mainShortRow.hashRate = this.accounts[index].hashRate15m;
-        this.table.mainShortRow.hashAvarage = this.accounts[index].hashRate;
-        this.table.mainShortRow.hashAvarage24 = this.accounts[index].hashRate24;
+        if (this.accounts.length > 0) {
+            this.accounts.forEach((acc) => {
+                if (acc.indexWorker == this.index) {
+                    this.table.mainRow.hashRate = acc.shares1m;
+                    // this.table.mainRow.hashAvarage = acc.shares1h;
+                    this.table.mainRow.hashAvarage24 = acc.shares1d;
+                    this.table.mainRow.rejectRate = acc.rejectRate;
+                    this.table.mainShortRow.hashRate = acc.shares1m;
+                    // this.table.mainShortRow.hashAvarage = acc.shares1h;
+                    this.table.mainShortRow.hashAvarage24 = acc.shares1d;
+                    this.table.mainShortRow.rejectRate = acc.rejectRate;
+                }
+            });
+        }
     },
     created() {
         window.addEventListener("resize", this.handleResize);
         this.handleResize();
     },
     beforeMount() {
-        if (localStorage.workers) {
-            this.workers = JSON.parse(localStorage.workers);
-        }
         if (localStorage.accounts) {
             this.accounts = JSON.parse(localStorage.accounts);
         }

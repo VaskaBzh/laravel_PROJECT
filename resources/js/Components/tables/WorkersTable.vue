@@ -18,15 +18,15 @@
                     <span class="legend_elem legend_elem-unstable">
                         {{ this.unstable }}
                     </span>
-                    <span class="legend_elem legend_elem-unactive">
-                        {{ this.unactive }}
+                    <span class="legend_elem legend_elem-unActive">
+                        {{ this.unActive }}
                     </span>
                     <span class="main__number legend_elem legend_elem-all">
                         Все: {{ this.all }}
                     </span>
                 </span>
                 <span class="main__number">{{ this.hashRate }} TH/s</span>
-                <span class="main__number">{{ this.hashAvarage }} TH/s</span>
+                <span class="main__number">{{ this.hashAvarage24 }} TH/s</span>
                 <span class="main__number">{{ this.rejectRate }} %</span>
             </div>
         </div>
@@ -49,6 +49,8 @@
                 :visualType="this.visualType"
                 :columns="row"
                 :key="i"
+                :workerKey="i"
+                @change_hash="this.graphChanger"
                 :class="row.hashClass"
             />
         </div>
@@ -82,7 +84,7 @@
             >
                 <td class="main__number">{{ this.mainRow.hash }}</td>
                 <td class="main__number">{{ this.hashRate }} TH/s</td>
-                <td class="main__number">{{ this.hashAvarage }} TH/s</td>
+                <!--                <td class="main__number">{{ this.hashAvarage }} TH/s</td>-->
                 <td class="main__number">{{ this.hashAvarage24 }} TH/s</td>
                 <td class="main__number">{{ this.rejectRate }} %</td>
             </tr>
@@ -95,7 +97,7 @@
             >
                 <td class="main__number">{{ this.mainRow.hash }}</td>
                 <td class="main__number">{{ this.hashRate }} TH/s</td>
-                <td class="main__number">{{ this.hashAvarage }} TH/s</td>
+                <!--                <td class="main__number">{{ this.hashAvarage }} TH/s</td>-->
                 <td class="main__number">{{ this.rejectRate }} %</td>
             </tr>
             <tr v-else class="row-main" :key="mainRow">
@@ -106,15 +108,15 @@
                     <div class="row-main_elem row-main_elem-unstable">
                         {{ this.unstable }}
                     </div>
-                    <div class="row-main_elem row-main_elem-unactive">
-                        {{ this.unactive }}
+                    <div class="row-main_elem row-main_elem-unActive">
+                        {{ this.unActive }}
                     </div>
                     <div class="main__number row-main_elem row-main_elem-all">
                         Все: {{ this.all }}
                     </div>
                 </td>
                 <td class="main__number">{{ this.hashRate }} TH/s</td>
-                <td class="main__number">{{ this.hashAvarage }} TH/s</td>
+                <td class="main__number">{{ this.hashAvarage24 }} TH/s</td>
                 <td class="main__number">{{ this.rejectRate }} %</td>
             </tr>
             <table-workers-row
@@ -122,13 +124,14 @@
                 :columns="row"
                 :key="i"
                 :class="row.hashClass"
+                :workerKey="i"
+                @change_hash="this.graphChanger"
             />
         </tbody>
     </table>
 </template>
 <script>
 import TableWorkersRow from "@/Components/tables/row/TableWorkersRow.vue";
-import axios from "axios";
 
 export default {
     components: { TableWorkersRow },
@@ -147,35 +150,62 @@ export default {
             mainTable: this.table,
         };
     },
+    mounted() {
+        this.graphChanger(localStorage.activeWorker);
+    },
     computed: {
-        active() {
-            return this.workers[0].workersActive;
-        },
-        unactive() {
-            return this.workers[0].workersInActive;
-        },
-        unstable() {
-            return this.workers[0].workersDead;
-        },
-        all() {
-            return this.active + this.unactive + this.unstable;
-        },
         hashRate() {
             return Number(this.mainRow.hashRate).toFixed(2);
         },
-        hashAvarage() {
-            return Number(this.mainRow.hashAvarage).toFixed(2);
-        },
+        // hashAvarage() {
+        //     return Number(this.mainRow.hashAvarage).toFixed(2);
+        // },
         hashAvarage24() {
             return Number(this.mainRow.hashAvarage24).toFixed(2);
         },
         rejectRate() {
             return Number(this.mainRow.rejectRate).toFixed(2);
         },
+        active() {
+            let val = 0;
+            val = JSON.parse(localStorage.accounts)[localStorage.active]
+                .workersActive;
+            return val;
+        },
+        unActive() {
+            let val = 0;
+            val = JSON.parse(localStorage.accounts)[localStorage.active]
+                .workersInActive;
+            return val;
+        },
+        unstable() {
+            let val = 0;
+            val = JSON.parse(localStorage.accounts)[localStorage.active]
+                .workersDead;
+            return val;
+        },
+        all() {
+            let val = 0;
+            val = JSON.parse(localStorage.accounts)[localStorage.active]
+                .workersAll;
+            return val;
+        },
     },
     methods: {
         handleResize() {
             this.viewportWidth = window.innerWidth;
+        },
+        graphChanger(key) {
+            document.querySelectorAll(".row-workers").forEach((row, i) => {
+                row.classList.remove("target");
+                if (i == key) {
+                    row.classList.add("target");
+                }
+            });
+            if (localStorage.activeWorker != key) {
+                localStorage.activeWorker = JSON.stringify(key);
+            }
+            this.$emit("graph_render", key);
         },
     },
     created() {
@@ -205,6 +235,7 @@ export default {
             width: 100%;
             display: flex;
             justify-content: space-between;
+            gap: 8px;
         }
         &_column {
             display: flex;
@@ -341,7 +372,7 @@ export default {
                 &-unstable {
                     background: #f7931a;
                 }
-                &-unactive {
+                &-unActive {
                     background: #ff0000;
                 }
             }

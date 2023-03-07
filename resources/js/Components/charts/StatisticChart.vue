@@ -49,22 +49,22 @@ export default {
     components: {
         MainTitle,
     },
-    mounted() {
-        const graphsList = this.graphs;
-        for (let i = 0; i < graphsList.length; i++) {
-            const ctr = document.querySelectorAll("#myChart");
-            const ctx = ctr[i].getContext("2d");
+    methods: {
+        renderChart() {
+            const graphsList = this.graphs;
+            for (let i = 0; i < graphsList.length; i++) {
+                const ctr = document.querySelectorAll("#myChart");
+                const ctx = ctr[i].getContext("2d");
 
-            const gradientBg = ctx.createLinearGradient(0, 0, 0, 400);
-            gradientBg.addColorStop(0, "rgba(63,123,221,1)");
-            gradientBg.addColorStop(1, "rgba(255,255,255,0)");
+                const gradientBg = ctx.createLinearGradient(0, 0, 0, 400);
+                gradientBg.addColorStop(0, "rgba(63,123,221,1)");
+                gradientBg.addColorStop(1, "rgba(255,255,255,0)");
 
-            let hours = () => {
-                let arr = [];
-                let time = "";
-                let bool = true;
-                for (let i = 24; i >= 0; i--) {
-                    if (i < 24) {
+                let hours = () => {
+                    let arr = [];
+                    let time = "";
+                    let bool = true;
+                    for (let i = 24; i >= 0; i--) {
                         if (new Date().getHours() - i <= 0) {
                             bool = false;
                         }
@@ -84,61 +84,67 @@ export default {
                         }
                         arr.push(time);
                     }
-                }
-                return arr;
-            };
+                    return arr;
+                };
 
-            new Chart(ctx, {
-                type: "line",
-                data: {
-                    labels: hours(),
-                    datasets: [
-                        {
-                            label: graphsList[0].title[0],
-                            data: graphsList[i].values,
-                            borderColor: "#3f7bdd",
-                            backgroundColor: gradientBg,
-                            tension: 0.4,
-                            radius: 0,
-                        },
-                    ],
-                },
-                options: {
-                    fill: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                z: 2,
+                new Chart(ctx, {
+                    type: "line",
+                    data: {
+                        labels: hours(),
+                        datasets: [
+                            {
+                                label: graphsList[0].title[0],
+                                data: graphsList[i].values,
+                                borderColor: "#3f7bdd",
+                                backgroundColor: gradientBg,
+                                tension: 0.4,
+                                radius: 0,
                             },
-                            ticks: {
-                                stepSize: 50,
+                        ],
+                    },
+                    options: {
+                        fill: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    z: 2,
+                                },
+                                ticks: {
+                                    stepSize: 50,
+                                },
+                            },
+                            x: {
+                                grid: {
+                                    display: false,
+                                },
                             },
                         },
-                        x: {
-                            grid: {
+                        plugins: {
+                            tooltip: {
+                                mode: "index",
+                                intersect: false,
+                            },
+                            legend: {
+                                // position: "left",
+                                // onClick: false,
                                 display: false,
                             },
                         },
-                    },
-                    plugins: {
-                        tooltip: {
-                            mode: "index",
+                        hover: {
+                            mode: "nearest",
                             intersect: false,
                         },
-                        legend: {
-                            // position: "left",
-                            // onClick: false,
-                            display: false,
-                        },
                     },
-                    hover: {
-                        mode: "nearest",
-                        intersect: false,
-                    },
-                },
-            });
-        }
+                });
+            }
+        },
+    },
+    mounted() {
+        this.renderChart();
+    },
+    beforeUpdate() {
+        this.renderChart();
     },
 };
 </script>
@@ -150,7 +156,6 @@ export default {
     }
 }
 .graph {
-    width: 100%;
     // .graph__main
     &__main {
         background: rgba(255, 255, 255, 0.29);
@@ -184,6 +189,9 @@ export default {
     &__buttons {
         display: flex;
         justify-content: flex-end;
+        @media (min-width: 479.98px) {
+            margin-right: 32px;
+        }
         @media (max-width: 479.98px) {
             justify-content: flex-start;
         }

@@ -1,4 +1,12 @@
 // Кастомные стили для анимаций
+.opacity {
+    &-before-enter {
+        opacity: 0;
+    }
+    &-enter {
+        opacity: 1;
+    }
+}
 .left {
   &--100 {
     &-before-enter {

@@ -60,7 +60,14 @@ import MainDate from "@/components/UI/MainDate.vue";
 import { Link, router } from "@inertiajs/vue3";
 
 export default {
-    components: { MainSlider, MainSelect, MainTitle, BlueButton, MainDate, Link },
+    components: {
+        MainSlider,
+        MainSelect,
+        MainTitle,
+        BlueButton,
+        MainDate,
+        Link,
+    },
     data() {
         return {
             date: {},

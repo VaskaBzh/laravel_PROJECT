@@ -28,13 +28,15 @@
             <div class="accounts__content" v-if="this.accounts.length > 0">
                 <account-profile
                     v-for="account in this.accounts"
-                    :key="account.puid"
+                    :key="account.indexWorker"
+                    :accKey="account.indexWorker"
                     :accountInfo="account"
+                    @changeActive="this.activeChanger"
                 />
             </div>
             <div class="accounts__content no-info" v-else>
                 <img src="../../../assets/img/img_no-info.png" alt="no_info" />
-                <span>Нет данных</span>
+                <span>Нужно время для регистрации аккаунта</span>
             </div>
         </div>
         <popup-view id="addAcc">
@@ -94,182 +96,262 @@ export default {
     data() {
         return {
             accounts: [],
+            accountsAll: [],
+            hash: {},
+            history: {},
+            updateId: 0,
+            validate: false,
+            activeIndex: 0,
         };
     },
-    methods: {
-        async infoGetter() {
-            let accountsAll = [];
-            let workers = [];
-            let hash = [];
-            // let id = [];
-
-            hash.splice(0, hash.length);
-            workers.length = 0;
-
-            const instance = axios.create({
+    computed: {
+        instance() {
+            return axios.create({
                 baseURL: "https://pool.api.btc.com/v1",
                 headers: { "Content-Type": "application/json; charset=utf-8" },
             });
-
-            let history = [];
-
+        },
+    },
+    methods: {
+        activeMount() {
+            document.querySelectorAll(".profile").forEach((profile) => {
+                profile.classList.remove("active");
+                if (profile.dataset.key == this.activeIndex) {
+                    profile.classList.add("active");
+                }
+            });
+        },
+        activeChanger(el) {
+            this.activeIndex = el;
+            localStorage.active = JSON.stringify(this.activeIndex);
+            setTimeout(this.activeMount, 300);
+        },
+        reloader(groups) {
+            setInterval(() => {
+                this.instance
+                    .get(
+                        "/worker/groups?access_key=sBfOHsJLY6tZdoo4eGxjrGm9wHuzT17UMhDQQn4N&puid=781195&page=1&page_size=52"
+                    )
+                    .then((response) => {
+                        response.data.data.list.forEach((el, i) => {
+                            if (i > 1) {
+                                groups.forEach((group) => {
+                                    if (el.name === group) {
+                                        window.location.reload();
+                                    }
+                                });
+                            }
+                        });
+                    });
+            }, 1000);
+        },
+        doStuff() {
+            localStorage.accounts = JSON.stringify(this.accountsAll);
+            localStorage.hash = JSON.stringify(this.hash);
+            localStorage.active = JSON.stringify(this.activeIndex);
+            localStorage.history = JSON.stringify(this.history);
             if (localStorage.accounts) {
                 this.accounts = JSON.parse(localStorage.accounts);
+                document.querySelector(".preloader").style.display = "none";
+                document.querySelector("body").style.overflowY = "visible";
             }
-
-            const doStuff = () => {
-                localStorage.accounts = JSON.stringify(accountsAll);
-                localStorage.workers = JSON.stringify(workers);
-                localStorage.hash = JSON.stringify(hash);
-                localStorage.history = JSON.stringify(history);
-                if (localStorage.accounts) {
-                    this.accounts = JSON.parse(localStorage.accounts);
-                    document.querySelector(".preloader").innerHTML = "";
-                    document.querySelector(".preloader").style.display = "none";
-                    document.querySelector("body").style.overflowY = "visible";
+        },
+        async startMount(index) {
+            this.doStuff();
+            this.activeChanger(index);
+        },
+        async historyHasher(i) {
+            Reflect.ownKeys(this.hash).forEach((el) => {
+                if (el !== "length") {
+                    this.instance
+                        .get(
+                            `/worker/${el}/share-history?puid=781195&access_key=sBfOHsJLY6tZdoo4eGxjrGm9wHuzT17UMhDQQn4N&dimension=1h&start_ts=${
+                                Reflect.get(this.hash, el).createdAt
+                            }&real_point=1&count=72`
+                        )
+                        .then((resp) => {
+                            Reflect.set(
+                                this.history[i - 2],
+                                el,
+                                resp.data.data.tickers
+                            );
+                            this.startMount(this.accountsAll[0].indexWorker);
+                        })
+                        .catch((err) => {
+                            console.log(err);
+                        });
                 }
-            };
-
-            instance
+            });
+        },
+        async getAccGroup(arr, el, groupName, i, response) {
+            arr.forEach((group, groupIndex) => {
+                if (el.name === group) {
+                    this.validate = true;
+                    Reflect.set(this.history, i - 2, {});
+                    let accountModel = {
+                        img: "profile.png",
+                        name: el.name,
+                        hashRate: "",
+                        workersActive: el.workers_active,
+                        workersAll: el.workers_total,
+                        workersInActive: el.workers_inactive,
+                        workersDead: el.workers_dead,
+                        todayProfit: "",
+                        myPayment: "",
+                        rejectRate: el.reject_percent,
+                        shares1m: el.shares_1m,
+                        shares1h: 0,
+                        shares1d: 0,
+                        unit: el.shares_unit,
+                        indexWorker: i - 2,
+                    };
+                    if (el.name == groupName) {
+                        this.updateGroup(el);
+                    }
+                    this.getHash(el.gid, accountModel, i, el);
+                    Reflect.set(this.accountsAll, groupIndex, accountModel);
+                } else if (
+                    i === response.data.data.list.length - 1 &&
+                    !this.validate
+                ) {
+                    this.doStuff();
+                    this.reloader(arr);
+                }
+            });
+        },
+        async workerChecker(arr, groupName, el) {
+            this.instance
                 .get(
-                    "/account/sub-account/morelist?access_key=sBfOHsJLY6tZdoo4eGxjrGm9wHuzT17UMhDQQn4N&puid=775149"
+                    `/worker?access_key=sBfOHsJLY6tZdoo4eGxjrGm9wHuzT17UMhDQQn4N&group=${el.gid}&puid=781195`
+                )
+                .then((workers) => {
+                    const workerChecker = (str, substr) => {
+                        const regExp = new RegExp(substr);
+                        return regExp.test(str);
+                    };
+                    let wordsLength = 0;
+                    arr.forEach((group) => {
+                        workers.data.data.data.forEach((worker) => {
+                            if (workerChecker(worker.worker_name, group)) {
+                                if (wordsLength < group.length) {
+                                    wordsLength = group.length;
+                                    groupName = group;
+                                    this.updateId = worker.worker_id;
+                                }
+                            }
+                        });
+                    });
+                });
+        },
+        async updateGroup(el) {
+            let updateData = {
+                puid: "781195",
+                group_id: el.group_id,
+                worker_id: this.updateId,
+            };
+            this.instance
+                .post(
+                    `/worker/update?access_key=sBfOHsJLY6tZdoo4eGxjrGm9wHuzT17UMhDQQn4N&group=${el.gid}&puid=781195`,
+                    updateData
+                )
+                .then((re) => {
+                    console.log(re);
+                });
+        },
+        async getHash(groupId, accountModel, i, el) {
+            this.instance
+                .get(
+                    `/worker?access_key=sBfOHsJLY6tZdoo4eGxjrGm9wHuzT17UMhDQQn4N&group=${groupId}&puid=781195`
+                )
+                .then((result) => {
+                    if (result.data.data.data.length > 0) {
+                        result.data.data.data.forEach((worker, workerIndex) => {
+                            let hashModel = {
+                                shares1m: worker.shares_1m,
+                                shares1h: (worker.shares_15m * 4) / 60,
+                                shares1d: worker.shares_1d,
+                                persent: worker.reject_percent,
+                                status: worker.status,
+                                name: worker.worker_name,
+                                indexWorker: i - 2,
+                                workerId: worker.worker_id,
+                                createdAt: el.created_at,
+                            };
+                            Reflect.set(this.hash, worker.worker_id, hashModel);
+                            accountModel.shares1h +=
+                                (Number(worker.shares_15m) * 4) / 60;
+                            accountModel.shares1d += Number(worker.shares_1d);
+                            if (
+                                workerIndex ===
+                                result.data.data.data.length - 1
+                            ) {
+                                this.historyHasher(i);
+                            }
+                        });
+                    } else {
+                        accountModel.shares1h = 0;
+                        accountModel.shares1d = 0;
+                        this.startMount(this.accountsAll[0].indexWorker);
+                    }
+                });
+        },
+        async getAcc() {
+            this.instance
+                .get(
+                    "/worker/groups?access_key=sBfOHsJLY6tZdoo4eGxjrGm9wHuzT17UMhDQQn4N&puid=781195&page=1&page_size=52"
                 )
                 .then((response) => {
                     if (localStorage.accounts) {
                         if (
                             JSON.parse(localStorage.accounts).length >
-                            response.data.data.display.length
+                            response.data.data.list.length - 2
                         ) {
-                            accountsAll.length = 0;
+                            this.accountsAll.length = 0;
                         }
                     }
-
-                    const data = response.data.data.display;
-
-                    data.forEach((worker, i) => {
-                        let index = i;
-                        let workerModel = {
-                            workersActive: 0,
-                            workersInActive: 0,
-                            workersDead: 0,
-                            workersAll: 0,
-                        };
-                        let accountModel = {
-                            img: "profile.png",
-                            name: worker.name,
-                            hashRate: "",
-                            workersActive: 0,
-                            workersAll: 0,
-                            todayProfit: "",
-                            myPayment: "",
-                            puid: worker.puid,
-                        };
-                        if (i === 0) {
-                            history.startTs = worker.created_at;
-                            history.puid = worker.puid;
-                        }
-                        instance
-                            .get(
-                                `/worker?puid=${worker.puid}&access_key=sBfOHsJLY6tZdoo4eGxjrGm9wHuzT17UMhDQQn4N`
-                            )
-                            .then((response) => {
-                                response.data.data.data.forEach((el) => {
-                                    let hashModel = {
-                                        shares1m: 0,
-                                        shares1h: 0,
-                                        shares1d: 0,
-                                        persent: 0,
-                                        indexWorker: index,
-                                        status: "",
-                                        name: "",
-                                        workerId: "",
-                                    };
-                                    if (response.data.data.data.length > 0) {
-                                        hashModel.shares1d = el.shares_1d;
-                                        hashModel.shares1h =
-                                            (el.shares_15m * 4) / 60;
-                                        hashModel.shares1m = el.shares_1m;
-                                        hashModel.persent = el.reject_percent;
-                                        hashModel.status = el.status;
-                                        hashModel.name = el.worker_name;
-                                        hashModel.workerId = el.worker_id;
-                                    }
-                                    hash.push(hashModel);
-                                });
-                            })
-                            .catch((resp) => {
-                                console.log(resp);
-                            });
-                        instance
-                            .get(
-                                `/account/sub-account/hashrate-miners?puids=${worker.puid}&access_key=sBfOHsJLY6tZdoo4eGxjrGm9wHuzT17UMhDQQn4N`
-                            )
-                            .then((response) => {
-                                workerModel.workersActive =
-                                    response.data.data[
-                                        worker.puid
-                                    ].workers_active;
-                                accountModel.workersActive =
-                                    response.data.data[
-                                        worker.puid
-                                    ].workers_active;
-                                workerModel.workersInActive =
-                                    response.data.data[
-                                        worker.puid
-                                    ].workers_inactive;
-                                workerModel.workersDead =
-                                    response.data.data[
-                                        worker.puid
-                                    ].workers_dead;
-                                workerModel.workersAll =
-                                    response.data.data[worker.puid].workers;
-                                accountModel.workersAll =
-                                    response.data.data[worker.puid].workers;
-                                Reflect.set(workers, index, workerModel);
-                                Reflect.set(accountsAll, index, accountModel);
-                                // doStuff();
-                                if (index === data.length - 1) {
-                                    doStuff();
+                    let arr = [];
+                    // eslint-disable-next-line no-undef
+                    axios.get(route("sub_process")).then((resp) => {
+                        if (resp.data !== "") {
+                            arr = resp.data;
+                            let groupName = "";
+                            response.data.data.list.forEach((el, i) => {
+                                if (i === 0) {
+                                    this.workerChecker(arr, groupName, el);
+                                } else if (i > 1) {
+                                    this.getAccGroup(
+                                        arr,
+                                        el,
+                                        groupName,
+                                        i,
+                                        response
+                                    );
                                 }
-                            })
-                            .catch((resp) => {
-                                console.log(resp);
                             });
-                        instance
-                            .get(
-                                `/realtime/hashrate?puid=${worker.puid}&access_key=sBfOHsJLY6tZdoo4eGxjrGm9wHuzT17UMhDQQn4N`
-                            )
-                            .then((response) => {
-                                accountModel.hashRate15m =
-                                    response.data.data.shares_15m;
-                                accountModel.hashRate =
-                                    (response.data.data.shares_15m * 4) / 60;
-                                accountModel.hashRate24 =
-                                    response.data.data.shares_1d;
-                            });
-                        instance
-                            .get(
-                                `/worker/share-history?puid=${worker.puid}&access_key=sBfOHsJLY6tZdoo4eGxjrGm9wHuzT17UMhDQQn4N&dimension=1h&start_ts=1676727619&real_point=1&count=72`
-                            )
-                            .then((resp) => {
-                                history.push(resp.data.data.tickers);
-                            })
-                            .catch((err) => {
-                                console.log(err);
-                            });
+                        } else {
+                            this.startMount(this.accountsAll[0].indexWorker);
+                        }
                     });
                 })
                 .catch((err) => {
                     console.log(err);
                 });
         },
+        async infoGetter() {
+            if (localStorage.accounts) {
+                this.accounts = JSON.parse(localStorage.accounts);
+            }
+            if (localStorage.active) {
+                this.activeIndex = JSON.parse(localStorage.active);
+            }
+
+            this.getAcc();
+        },
     },
     setup() {
         const form = useForm({
             name: "",
         });
-
-        // let info;
 
         const instance = axios.create({
             baseURL: "https://pool.api.btc.com/v1",
@@ -278,22 +360,23 @@ export default {
 
         const addAcc = () => {
             let data = {
-                access_key: "sBfOHsJLY6tZdoo4eGxjrGm9wHuzT17UMhDQQn4N",
-                puid: "775149",
-                region_node: "eu",
-                worker_name: form.name,
-                id: null,
-                token: "fake-jwt-token",
-                bitcoin_address: "1MTpVwnq2hwYpftBL9iYtZeSP7p1etUZ8k",
+                puid: "781195",
+                group_name: form.name,
             };
-
+            // eslint-disable-next-line no-undef
+            axios.put(route("sub_create"), data);
+            //     .then((resp) => {
+            //     console.log(resp);
+            // });
             instance
                 .post(
-                    "/account/sub-account/create?access_key=sBfOHsJLY6tZdoo4eGxjrGm9wHuzT17UMhDQQn4N&puid=775149",
+                    "groups/create?access_key=sBfOHsJLY6tZdoo4eGxjrGm9wHuzT17UMhDQQn4N&puid=781195",
                     data
                 )
                 .then((resp) => {
-                    window.location.reload();
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 300);
                     console.log(resp);
                 })
                 .catch((err) => {
@@ -311,15 +394,12 @@ export default {
     },
     mounted() {
         document.title = "Аккаунты";
+        document.querySelector("html").removeAttribute("class");
 
-        if (!localStorage.accounts) {
-            document.querySelector(".preloader").style.display = "flex";
-            document.querySelector("body").style.overflowY = "hidden";
-        } else {
-            document.querySelector(".preloader").innerHTML = "";
-            document.querySelector(".preloader").style.display = "none";
-            document.querySelector("body").style.overflowY = "visible";
-        }
+        this.activeMount();
+
+        document.querySelector(".preloader").style.display = "flex";
+        document.querySelector("body").style.overflowY = "hidden";
     },
 };
 </script>

@@ -1,15 +1,18 @@
 <template>
-    <div class="profile">
+    <div class="profile" v-scroll="'opacity'" :data-key="this.accKey">
         <div class="profile__head" ref="profileHead">
             <img
                 :src="
                     'http://127.0.0.1:5173' +
                     `/resources/assets/img/${this.accountInfo.img}`
                 "
+                @click="this.chageActive"
                 class="profile__icon"
                 alt="profile__icon"
             />
-            <span class="profile__name">{{ this.accountInfo.name }}</span>
+            <span class="profile__name" @click="this.chageActive">{{
+                this.accountInfo.name
+            }}</span>
             <Link :href="route('settings')">
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -37,7 +40,7 @@
             <div class="profile__body-block">
                 <span class="profile__body-name">Ср. хешрейт / 1ч</span>
                 <span class="profile__body-value">
-                    {{ this.hashRate }} H/s</span
+                    {{ this.hashRate }} {{ this.accountInfo.unit }}H/s</span
                 >
             </div>
             <div class="profile__body-block">
@@ -71,18 +74,22 @@ export default {
     components: {
         Link,
     },
-    methods: {
-        router() {
-            return router;
-        },
-    },
     props: {
         accountInfo: Object,
+        accKey: Number,
     },
     data() {
         return {
             account: this.accountInfo,
         };
+    },
+    methods: {
+        router() {
+            return router;
+        },
+        chageActive() {
+            this.$emit("changeActive", this.accKey);
+        },
     },
     computed: {
         myPayment() {
@@ -92,7 +99,7 @@ export default {
             return Number(this.account.todayProfit).toFixed(8);
         },
         hashRate() {
-            return Number(this.account.hashRate).toFixed(2);
+            return Number(this.account.shares1m).toFixed(2);
         },
     },
 };
@@ -104,11 +111,27 @@ export default {
     padding: 16px;
     background: rgba(255, 255, 255, 0.29);
     border-radius: 21px;
+    border: 1px solid;
+    border-color: transparent;
+    transition: all 0.3s ease 0s;
     @media (max-width: 479.98px) {
         width: calc(100% + 40px);
         margin: 0 -20px;
         border-radius: 12px;
         padding: 20px;
+    }
+    &.active {
+        border-color: rgba(#331a38, 0.5);
+        background: #331a38;
+        .profile__name {
+            color: #ffffff;
+            &:hover {
+                text-decoration-color: #fff;
+            }
+        }
+        svg {
+            stroke: #ffffff;
+        }
     }
     &__head {
         display: flex;
@@ -133,6 +156,7 @@ export default {
         width: 64px;
         height: 64px;
         margin-right: 16px;
+        cursor: pointer;
         @media (max-width: 479.98px) {
             width: 36px;
             height: 36px;
@@ -143,11 +167,18 @@ export default {
         margin-right: auto;
         font-size: 24px;
         line-height: 30px;
-        font-family: AmpleSoftPro;
+        font-family: AmpleSoftPro, serif;
         font-weight: 700;
+        text-decoration: underline;
+        text-decoration-color: transparent;
+        transition: all 0.3s ease 0s;
+        cursor: pointer;
         @media (max-width: 479.98px) {
             font-size: 15px;
             line-height: 19px;
+        }
+        &:hover {
+            text-decoration-color: #331a38;
         }
     }
     svg {
@@ -175,7 +206,6 @@ export default {
         @media (max-width: 479.98px) {
             flex-direction: column;
             gap: 6px;
-            padding: 24px 20px;
             color: rgba(255, 255, 255, 0.3);
             background-color: transparent;
             padding: 0;

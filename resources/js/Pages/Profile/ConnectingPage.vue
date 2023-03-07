@@ -10,6 +10,7 @@
                         <main-select
                             class="connecting__select connecting__select-priority mini"
                             :options="values"
+                            @getCoin="this.getCoin"
                         ></main-select>
                     </div>
                     <div class="connecting__row">
@@ -100,6 +101,28 @@
                             </svg>
                         </div>
                     </div>
+                    <!--                    <div class="connecting__row connecting__row-copy">-->
+                    <!--                        Worker:-->
+                    <!--                        <div class="connecting__block-copy copy" ref="worker">-->
+                    <!--                            {{ this.worker }}-->
+                    <!--                            <svg-->
+                    <!--                                class="copy-button"-->
+                    <!--                                @click="this.copyLink(4)"-->
+                    <!--                                xmlns="http://www.w3.org/2000/svg"-->
+                    <!--                                width="24"-->
+                    <!--                                height="24"-->
+                    <!--                                viewBox="0 0 24 24"-->
+                    <!--                                fill="none"-->
+                    <!--                            >-->
+                    <!--                                <path-->
+                    <!--                                    d="M15 3V6.4C15 6.96005 15 7.24008 15.109 7.45399C15.2049 7.64215 15.3578 7.79513 15.546 7.89101C15.7599 8 16.0399 8 16.6 8H20M10 8H6C4.89543 8 4 8.89543 4 10V19C4 20.1046 4.89543 21 6 21H12C13.1046 21 14 20.1046 14 19V16M16 3H13.2C12.0799 3 11.5198 3 11.092 3.21799C10.7157 3.40973 10.4097 3.71569 10.218 4.09202C10 4.51984 10 5.0799 10 6.2V12.8C10 13.9201 10 14.4802 10.218 14.908C10.4097 15.2843 10.7157 15.5903 11.092 15.782C11.5198 16 12.0799 16 13.2 16H16.8C17.9201 16 18.4802 16 18.908 15.782C19.2843 15.5903 19.5903 15.2843 19.782 14.908C20 14.4802 20 13.9201 20 12.8V7L16 3Z"-->
+                    <!--                                    stroke-opacity="0.33"-->
+                    <!--                                    stroke-width="2"-->
+                    <!--                                    stroke-linejoin="round"-->
+                    <!--                                />-->
+                    <!--                            </svg>-->
+                    <!--                        </div>-->
+                    <!--                    </div>-->
                 </div>
                 <div class="connecting__block">
                     <div class="connecting__row">
@@ -162,11 +185,11 @@ export default {
         return {
             viewportWidth: 0,
             values: [
-                { title: "BTC", value: 1, img: "bitcoin_img.png" },
-                { title: "Dash", value: 2, img: "dash_img.png" },
-                { title: "Doge", value: 3, img: "doge_img.png" },
-                { title: "Etc", value: 4, img: "etc_img.png" },
-                { title: "Eth", value: 5, img: "eth_img.png" },
+                { title: "BTC", value: "btc", img: "bitcoin_img.png" },
+                { title: "BCH", value: "bch", img: "bitcoin-cash_img.png" },
+                { title: "Dash", value: "dash", img: "dash_img.png" },
+                { title: "Etc", value: "etc", img: "etc_img.png" },
+                { title: "Litecoin", value: "ltc", img: "litecoin_img.png" },
             ],
             countries: [
                 { title: "Russia", value: 1, img: "russian_img.png" },
@@ -175,19 +198,18 @@ export default {
                 { title: "Georgia", value: 4, img: "georgia_img.png" },
                 { title: "Serbia", value: 5, img: "serbia_img.png" },
             ],
-            linkAddress: "",
-            linkAddress1: "",
-            linkAddress2: "",
-            links: [
-                {
-                    linkAddress: "",
-                    linkAddress1: "",
-                    linkAddress2: "",
-                },
-            ],
+            linkAddress: "eu.ss.btc.com:1800",
+            linkAddress1: "eu.ss.btc.com:443",
+            linkAddress2: "eu.ss.btc.com:25",
+            worker: ``,
         };
     },
     methods: {
+        getCoin(coin) {
+            this.linkAddress = `eu.ss.${coin}.com:1800`;
+            this.linkAddress1 = `eu.ss.${coin}.com:443`;
+            this.linkAddress2 = `eu.ss.${coin}.com:25`;
+        },
         router() {
             return router;
         },
@@ -210,6 +232,12 @@ export default {
                 setTimeout(() => {
                     this.$refs.linkAddress2.classList.remove("active");
                 }, 1000);
+            } else if (i === 4) {
+                navigator.clipboard.writeText(this.worker);
+                this.$refs.worker.classList.add("active");
+                setTimeout(() => {
+                    this.$refs.worker.classList.remove("active");
+                }, 1000);
             }
         },
         handleResize() {
@@ -222,55 +250,21 @@ export default {
     },
     mounted() {
         document.title = "Подключение";
-
-        if (localStorage.links) {
-            this.links = JSON.parse(localStorage.links);
+        let accounts = [];
+        if (localStorage.accounts) {
+            accounts = JSON.parse(localStorage.accounts);
         }
-
-        this.linkAddress = this.links[0].link;
-        this.linkAddress1 = this.links[0].link1;
-        this.linkAddress2 = this.links[0].link2;
-        const doStuff = () => {
-            localStorage.links = JSON.stringify(this.links);
-            localStorage.region = JSON.stringify(region);
-        };
-
-        let obj = {};
-
-        const instance = axios.create({
-            baseURL: "https://pool.api.btc.com/v1",
-            headers: { "Content-Type": "application/json; charset=utf-8" },
-        });
-
-        let region = "";
-
-        instance
-            .get(
-                `/account/sub-account/morelist?puid=${localStorage.accounts[0].puid}&access_key=sBfOHsJLY6tZdoo4eGxjrGm9wHuzT17UMhDQQn4N`
-            )
-            .then((response) => {
-                region = response.data.data.display[0].region_text;
-                instance
-                    .get(
-                        `/pool/url-config/?puid=${localStorage.accounts[0].puid}&access_key=sBfOHsJLY6tZdoo4eGxjrGm9wHuzT17UMhDQQn4N`
-                    )
-                    .then((response) => {
-                        response.data.data.forEach((el, i) => {
-                            console.log(el);
-                            if (region === el.region_name) {
-                                obj.link = el.config[0];
-                                obj.link1 = el.config[1];
-                                obj.link2 = el.config[2];
-                            }
-                            this.links.shift(obj);
-                            this.links.push(obj);
-                        });
-                        doStuff();
-                    })
-                    .catch((resp) => {
-                        console.log(resp);
-                    });
-            });
+        if (Reflect.ownKeys(accounts).length > 0) {
+            if (
+                Reflect.get(accounts, Reflect.ownKeys(accounts)).indexWorker ==
+                localStorage.active
+            ) {
+                console.log();
+                this.worker = `${
+                    Reflect.get(accounts, Reflect.ownKeys(accounts)).name
+                }.name`;
+            }
+        }
     },
 };
 </script>

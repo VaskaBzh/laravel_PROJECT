@@ -1,7 +1,7 @@
 <template>
-    <div class="blue-button">
+    <button class="blue-button">
         <slot></slot>
-    </div>
+    </button>
 </template>
 
 <script>

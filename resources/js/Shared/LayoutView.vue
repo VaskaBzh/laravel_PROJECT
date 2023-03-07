@@ -28,10 +28,6 @@
                         </linearGradient>
                     </defs>
                 </svg>
-                <img
-                    src="../../assets/img/logo_high_quality-preloader.png"
-                    alt="logo"
-                />
             </div>
         </div>
         <div class="observer_block"></div>
