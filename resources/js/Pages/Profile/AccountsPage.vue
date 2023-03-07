@@ -175,7 +175,7 @@ export default {
                                 el,
                                 resp.data.data.tickers
                             );
-                            this.startMount(this.accountsAll[0].indexWorker);
+                            this.startMount(this.accountsAll[0]);
                         })
                         .catch((err) => {
                             console.log(err);
@@ -184,6 +184,7 @@ export default {
             });
         },
         async getAccGroup(arr, el, groupName, i, response) {
+            let index = 0;
             arr.forEach((group, groupIndex) => {
                 if (el.name === group) {
                     this.validate = true;
@@ -209,7 +210,8 @@ export default {
                         this.updateGroup(el);
                     }
                     this.getHash(el.gid, accountModel, i, el);
-                    Reflect.set(this.accountsAll, groupIndex, accountModel);
+                    Reflect.set(this.accountsAll, index, accountModel);
+                    index++;
                 } else if (
                     i === response.data.data.list.length - 1 &&
                     !this.validate
@@ -291,7 +293,7 @@ export default {
                     } else {
                         accountModel.shares1h = 0;
                         accountModel.shares1d = 0;
-                        this.startMount(this.accountsAll[0].indexWorker);
+                        this.startMount(this.accountsAll[0]);
                     }
                 });
         },
@@ -329,7 +331,7 @@ export default {
                                 }
                             });
                         } else {
-                            this.startMount(this.accountsAll[0].indexWorker);
+                            this.startMount(this.accountsAll[0]);
                         }
                     });
                 })
